@@ -1,0 +1,13 @@
+# 运行产物（不入库）
+runs/
+settlements/
+intel/
+*.pyc
+__pycache__/
+
+# Sofascore 抓取的队史数据（版权，不入库）
+team_history.json
+
+# 临时文件
+*.tmp
+.DS_Store
