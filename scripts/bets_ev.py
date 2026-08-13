@@ -19,6 +19,21 @@ def implied_prob(sp):
     return PAYOUT_RATE / sp
 
 
+def combos(selections, k):
+    """selections: [(label, sp, p)] → 所有 k 串组合"""
+    return list(itertools.combinations(selections, k))
+
+
+def ev_of(combo):
+    """一组串关的期望值 = P全中 × SP乘积 - 1。返回 (sp乘积, P全中, 期望值)"""
+    p_all = 1.0
+    sp_prod = 1.0
+    for label, sp, p in combo:
+        p_all *= p
+        sp_prod *= sp
+    return sp_prod, p_all, p_all * sp_prod - 1
+
+
 def main():
     # 昨天的方案
     # (标签, SP, 我的估计概率p)

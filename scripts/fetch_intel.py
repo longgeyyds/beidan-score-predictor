@@ -19,17 +19,19 @@ from pathlib import Path
 BASE = 'https://www.bjlot.com.cn'
 CSV = Path('data/beidan_history_2021_2026.csv')
 OUTDIR = Path('intel')
+VENUE_CACHE_FILE = Path('venue_cache.json')
 UA = 'Mozilla/5.0 (compatible; BeidanIntel/1.0)'
 
-# 球场坐标缓存（已查过的队，避免重复 browser_use）
-VENUE_CACHE = {
-    '巴黎圣日耳曼': (48.841363, 2.253069, 'Europe/Paris'),
-    '阿斯顿维拉': (52.509, -1.885, 'Europe/London'),
-    '博卡青年': (-34.61315, -58.37723, 'America/Argentina/Buenos_Aires'),
-    '玻利瓦尔': (-16.49945, -68.122853, 'America/La_Paz'),
-    '北西兰': (55.82, 12.32, 'Europe/Copenhagen'),
-    # 其余待 browser_use 查
-}
+
+def load_venue_cache():
+    """读球场坐标缓存 JSON（{队名: {lat, lon}}），缺失返回空 dict。"""
+    if VENUE_CACHE_FILE.exists():
+        try:
+            d = json.loads(VENUE_CACHE_FILE.read_text(encoding='utf-8'))
+            return {k: v for k, v in d.items() if not k.startswith('_') and isinstance(v, dict)}
+        except Exception:
+            return {}
+    return {}
 
 SCORES = ['1:0','2:0','2:1','3:0','3:1','3:2','4:0','4:1','4:2','胜其它',
           '0:0','1:1','2:2','3:3','平其它','0:1','0:2','1:2','0:3','1:3','2:3',
@@ -152,8 +154,9 @@ def main():
     matches = get_schedule(draw_no)
     rows = load_history()
 
+    venue = load_venue_cache()
     result = {'draw_no': draw_no, 'generated': datetime.now().isoformat(),
-              'matches': [], 'todo_injuries': []}
+              'matches': [], 'todo_injuries': [], 'todo_coords': []}
     for m in matches:
         home, away = m['home'], m['away']
         entry = dict(m)
@@ -162,14 +165,15 @@ def main():
         h2h_mid = h2h_and_mid(rows, home, away, m['kickoff'])
         entry['h2h'] = h2h_mid['h2h']
         entry['mid'] = h2h_mid['mid']
-        # 天气：北京时间 → UTC → 取整点匹配（坐标缺失则留空进待查清单）
-        if home in VENUE_CACHE:
-            lat, lon, _tz = VENUE_CACHE[home]
+        # 天气：北京时间 → UTC → 取整点匹配（坐标缺失则进待查清单，不静默 None）
+        if home in venue:
+            lat, lon = venue[home]['lat'], venue[home]['lon']
             ko = datetime.strptime(m['kickoff'], '%Y-%m-%d %H:%M:%S')
             utc_ko = (ko - timedelta(hours=8)).replace(minute=0, second=0, microsecond=0)
             entry['weather'] = weather(lat, lon, utc_ko.strftime('%Y-%m-%dT%H:%M'))
         else:
             entry['weather'] = None
+            result['todo_coords'].append({'home': home, 'away': away, 'kickoff': m['kickoff']})
         result['matches'].append(entry)
         # 待 browser_use 查伤病的队
         result['todo_injuries'].append({'home': home, 'away': away})
@@ -178,6 +182,7 @@ def main():
     out.write_text(json.dumps(result, ensure_ascii=False, indent=2), encoding='utf-8')
     print(json.dumps({'draw_no': draw_no, 'matches': len(matches),
                       'todo_injuries': len(result['todo_injuries']),
+                      'todo_coords': len(result['todo_coords']),
                       'out': str(out)}, ensure_ascii=False))
 
 
