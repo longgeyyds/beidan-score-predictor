@@ -1,7 +1,7 @@
 ---
 name: beidan-score-predictor
 description: 北京单场足球比分预测。当用户要求预测北单比分、分析今日场次、复盘北单赛果、推荐单场比分时使用。吸收开源足球预测skill经验：固定权重、防数据泄漏、近期画面优先、双轨结算、比分概率分布、校准评估(log-loss/置信度校准表，2026-08-12从GitHub生态学习)、已验证排除项(Dixon-Coles实测证伪)。核心纪律：比分生成与排序完全不参考SP；**SP>5过滤规则已去掉（2026-08-10用户要求），SP完全不参与选场与过滤**。
-version: 1.6.0
+version: 1.7.0
 ---
 
 # 北单比分预测 Skill
@@ -217,7 +217,7 @@ version: 1.6.0
 6. **剧本→唯一比分**：按推导出的剧本给出该场真实最可能比分
 7. 只选当前情报完整、剧本清晰的场次（通常3-5场，可0场）；情报缺口 → 标注或弃选
 8. 存档预测快照（时间戳+双方伤病+天气+近期状态+剧本推导+比分依据）
-9. **同步到GitHub公开仓库**（`longgeyyds/beidan-score-predictor`）：快照存 `docs/examples/`，本地 `` 提交后 push（SSH走443端口）。预测→开奖→复盘全程公开是仓库核心卖点
+9. **同步到GitHub公开仓库**（`longgeyyds/beidan-score-predictor`）：跑 `python3 sync_github.py "同步说明"` 自动复制快照/复盘/脚本/坐标缓存到本地镜像并 push（SSH走443端口）。预测→开奖→复盘全程公开是仓库核心卖点。**必须走脚本，不得手动复制**（手动复制曾导致镜像丢失，8/13教训）
 10. 输出：场次、对阵、唯一比分、**当前情报依据**（伤病/天气/状态）、剧本推导、**估计概率 p**（必附，2026-08-13 修复"无概率"漏洞）：
     - 估计概率 = 比分概率天花板基准（1:1≈11.8%、1:0≈9.9%）± 情报修正（门将伤/核心缺阵/高原等上调或下调 2-5 个百分点）
     - 复盘按 log-loss = -ln(p_命中) 结算，基线≈2.12，**低于基线才算预测有信息量**（否则就是"命中率靠瞎猜"）
@@ -297,5 +297,21 @@ version: 1.6.0
 - 预测快照：`docs/examples/manual_predictions_*.md`
 - 复盘报告：`docs/review_*.md`
 - 大数据分析：`docs/win_rate_improvement_analysis.md`
+- 球场坐标缓存：`venue_cache.json`（fetch_intel.py 读取）
+- 结构化预测清单：`predict_*.json`（review_auto.py 读取）
+- 累计账本：`docs/review_ledger.md`
 - GitHub公开仓库：``（push到 longgeyyds/beidan-score-predictor）
-- Dixon-Coles实测证伪报告：仓库 `docs/backtest_dc_report.md`；英文方法学：仓库 `docs/methodology.md`
+
+## 工具脚本清单（2026-08-13 补齐，防留尾巴）
+
+| 脚本 | 作用 | 何时用 |
+|---|---|---|
+| `fetch_intel.py` | 自动拉赛程SP+近期状态+首回合/中间比赛+天气 → JSON | 预测前 |
+| `verify_results.py` | 官方XML复核本地CSV，报警不一致 | **复盘前强制** |
+| `review_auto.py` | 读官方XML+预测JSON，自动对比+统计 | 复盘时 |
+| `log_loss.py` | 概率校准度评估（基线0.367，非2.12） | 复盘时（下期起预测带p） |
+| `bets_ev.py` | 串关期望值，对比市场隐含概率 | 资金分配前 |
+| `sync_github.py` | 自动同步到GitHub并push | 每次预测/复盘后 |
+| `test_scripts.py` | 核心脚本单元测试（14个） | 改脚本后必跑 |
+
+**纪律**：改任何脚本后跑 `python3 test_scripts.py` 必须全绿；复盘前跑 `verify_results.py` 防数据错；同步走 `sync_github.py` 不手动。
