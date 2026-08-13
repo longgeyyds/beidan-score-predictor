@@ -35,6 +35,7 @@ PATH_REPLACEMENTS = [
 CORE_SCRIPTS = [
     'verify_results.py', 'bets_ev.py', 'fetch_intel.py', 'update_history.py',
     'log_loss.py', 'review_auto.py', 'sync_github.py', 'test_scripts.py',
+    'self_check.py',
     'backtest_v8_league_mode.py', 'backtest_v9_halfyear_strict.py',
     'backtest_v9b_strategies.py', 'backtest_v9c_2025pool.py',
     'backtest_v9d_crossyear.py', 'backtest_v9e_dynamic.py',
