@@ -12,7 +12,7 @@
   7. skill 里 SP>5 规则残留（8/10 已取消）
   8. log-loss 基线值写错（应 0.367，非 2.12）
 
-用法：python3 self_check.py [期号]   默认期号 26084
+用法：python3 self_check.py [期号]   默认自动发现当前销售中期号
 """
 import json, re, subprocess, sys
 from pathlib import Path
@@ -36,7 +36,15 @@ def check(name, cond, detail=''):
 
 
 def main():
-    draw_no = sys.argv[1] if len(sys.argv) > 1 else '26084'
+    if len(sys.argv) > 1:
+        draw_no = sys.argv[1]
+    else:
+        try:
+            import fetch_intel as fi
+            draw_no = fi.detect_live_draw()
+        except Exception as e:
+            print(f'❌ 无法自动发现当前销售中期号：{e}')
+            return 1
 
     # 1. 数据一致性
     try:

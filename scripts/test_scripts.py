@@ -107,6 +107,25 @@ class TestFetchIntel(unittest.TestCase):
         self.assertEqual(len(res['mid']['away']), 1)
         self.assertIn('2:0', res['mid']['home'][0])
 
+    def test_detect_live_draw_probes_beyond_stale_list(self):
+        # 官方 drawnolist 可能仍停在旧期，但下一期 XML 已经销售中。
+        from unittest.mock import patch
+        import io
+        old = 'jsonString={"drawnolist":[{"drawno":"26084"}]}'.encode()
+        xml_old = '<root><matchInfo><matchelem><item><matchandstate>停售</matchandstate></item></matchelem></matchInfo></root>'.encode()
+        xml_live = '<root><matchInfo><matchelem><item><matchandstate>销售中</matchandstate></item></matchelem></matchInfo></root>'.encode()
+
+        def fake_fetch(no):
+            if no == '26085':
+                return xml_live
+            if no in {'26084', '26086', '26087', '26088', '26089'}:
+                return xml_old
+            raise AssertionError(no)
+
+        with patch.object(fi.urllib.request, 'urlopen', return_value=io.BytesIO(old)), \
+             patch.object(fi, 'fetch_xml', side_effect=fake_fetch):
+            self.assertEqual(fi.detect_live_draw(), '26085')
+
 
 class TestLogLoss(unittest.TestCase):
     def test_hit_uses_ln_p(self):

@@ -148,8 +148,46 @@ def weather(lat, lon, utc_kickoff_hour):
     return None
 
 
+def detect_live_draw():
+    """自动发现最新销售中期号。
+
+    官方 drawnolist 控制文件可能晚于新一期开售更新（26085 已开售时列表仍停在
+    26084），所以不能把列表最后一期直接当当前期；以其为基准继续向后探测 XML。
+    """
+    now = datetime.now()
+    months = [(now.year, now.month)]
+    if now.month == 1:
+        months.append((now.year - 1, 12))
+    else:
+        months.append((now.year, now.month - 1))
+    known = []
+    for year, month in months:
+        url = f'{BASE}/data/250/control/drawnolist_{year}{month:02d}.js'
+        try:
+            req = urllib.request.Request(url, headers={'User-Agent': UA, 'Referer': BASE + '/'})
+            text = urllib.request.urlopen(req, timeout=15).read().decode('utf-8-sig', 'replace')
+            known.extend(int(x) for x in re.findall(r'"drawno":"(\d{5})"', text))
+        except Exception:
+            pass
+    if not known:
+        raise RuntimeError('无法从官方 drawnolist 找到基准期号，请显式传入期号')
+    base = max(known)
+    live = []
+    for number in range(base, base + 6):
+        try:
+            root = ET.fromstring(fetch_xml(str(number)).decode('utf-8-sig', 'replace'))
+            items = root.findall('.//matchInfo/matchelem/item')
+            if any(txt(item, 'matchandstate') == '销售中' for item in items):
+                live.append(number)
+        except Exception:
+            continue
+    if not live:
+        raise RuntimeError(f'从官方期号 {base} 起未探测到销售中期号')
+    return str(max(live))
+
+
 def main():
-    draw_no = sys.argv[1] if len(sys.argv) > 1 else '26084'
+    draw_no = sys.argv[1] if len(sys.argv) > 1 else detect_live_draw()
     OUTDIR.mkdir(parents=True, exist_ok=True)
     matches = get_schedule(draw_no)
     rows = load_history()
