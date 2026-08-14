@@ -1,7 +1,7 @@
 ---
 name: beidan-score-predictor
 description: 北京单场足球比分预测。当用户要求预测北单比分、分析今日场次、复盘北单赛果、推荐单场比分时使用。吸收开源足球预测skill经验：固定权重、防数据泄漏、近期画面优先、双轨结算、比分概率分布、校准评估(log-loss/置信度校准表，2026-08-12从GitHub生态学习)、已验证排除项(Dixon-Coles实测证伪)。核心纪律：比分生成与排序完全不参考SP；**SP>5过滤规则已去掉（2026-08-10用户要求），SP完全不参与选场与过滤**。
-version: 1.9.0
+version: 2.0.0
 ---
 
 # 北单比分预测 Skill
@@ -185,6 +185,15 @@ version: 1.9.0
 3. **Open-Meteo 天气（免费无key）**：
    - 球队详情 `/api/v1/team/{id}` → `venue.venueCoordinates{latitude, longitude}`（球场坐标）
    - 天气：`https://api.open-meteo.com/v1/forecast?latitude=X&longitude=Y&hourly=temperature_2m,precipitation,wind_speed_10m&timezone=auto` → 取开赛时刻温度/降水/风速
+4. **过程数据画像（2026-08-14 新增，死磕比分的核心升级）**：
+   - **为什么要用**：预测进球该看"过程"（射门质量/重大机会），不是"历史比分频率"。前者是因果（射门多+转化高→进球多），后者是结果（命中率天花板12%）。
+   - **拿什么**：`/api/v1/team/{id}/unique-tournament/{ut}/season/{sid}/statistics/overall` → statistics 字段含：
+     - 进攻：`shots`(射门) `shotsOnTarget`(射正) `bigChances`(重大机会) `bigChancesCreated`(创造重大机会) `bigChancesMissed`(浪费) `goalsScored`
+     - 防守：`shotsOnTargetAgainst`(被射正) `bigChancesAgainst`(被创造重大机会) `goalsConceded` `cleanSheets`
+     - `matches`(场次)
+   - **怎么拿 season 参数**：`/api/v1/team/{id}/events/next/0` → `event.season.id` + `event.tournament.uniqueTournament.id`
+   - **计算**：`process_stats.py` 算双方期望进球（进攻系数=重大机会创造+射正率，防守系数=被创造重大机会+被射正），`save_process_data.py` 转存抓取的原始数据
+   - **⚠️ 诚实边界**：①真 xG 免费层拿不到（shotmap 404），只有 bigChances 这个粗糙代理；②当前赛季刚开季时 statistics 端点 404，只有上赛季数据（赛季更替期要打折）；③**无法历史回测**（免费源不给历史当时的过程数据），只能前瞻实盘验证；④初版期望进球公式系数偏高（实测贝西克塔斯vs本菲卡算出3:4），**系数待实盘校准，当前只作"大球/小球倾向"参考，不作精确比分唯一依据**
 
 **不可用源（别再试）：** FBref/Transfermarkt（Cloudflare/AWS WAF）、football-data.org（需key）、api-football（需注册key且免费层100次/天）、PyPI transfermarkt库（无aarch64 wheel）、FotMob（API 404 已封，2026-08-13实测）
 
@@ -321,6 +330,8 @@ version: 1.9.0
 | `bets_ev.py` | 串关期望值，对比市场隐含概率 | 资金分配前 |
 | `sync_github.py` | 自动同步到GitHub并push | 每次预测/复盘后 |
 | `self_check.py` | 主动自检（8类历史坑） | **每次预测/复盘/改脚本后，主动跑** |
-| `test_scripts.py` | 核心脚本单元测试（14个） | 改脚本后必跑 |
+| `process_stats.py` | 过程数据画像 → 期望进球 | 预测前（读 process_data.json） |
+| `save_process_data.py` | browser_use 抓取的赛季统计 → 规范化转存 | 抓取过程数据后 |
+| `test_scripts.py` | 核心脚本单元测试（18个） | 改脚本后必跑 |
 
 **纪律**：改任何脚本后跑 `python3 test_scripts.py` 必须全绿；复盘前跑 `verify_results.py` 防数据错；同步走 `sync_github.py` 不手动；**每次收工前跑 `self_check.py` 主动自检，不等用户催**。

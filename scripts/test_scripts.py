@@ -15,6 +15,7 @@ import bets_ev as bev
 import fetch_intel as fi
 import log_loss as ll
 import review_auto as ra
+import process_stats as ps
 
 
 class TestVerifyResults(unittest.TestCase):
@@ -126,6 +127,40 @@ class TestReviewAuto(unittest.TestCase):
         self.assertEqual(ra.dir_of('2:1'), 'H')
         self.assertEqual(ra.dir_of('1:1'), 'D')
         self.assertEqual(ra.dir_of('0:1'), 'A')
+
+
+class TestProcessStats(unittest.TestCase):
+    def _team(self):
+        return {'season': {
+            'matches': 36, 'goalsScored': 59, 'goalsConceded': 36,
+            'shots': 502, 'shotsOnTarget': 176, 'bigChances': 107,
+            'bigChancesCreated': 80, 'bigChancesMissed': 62,
+            'shotsAgainst': 407, 'shotsOnTargetAgainst': 136, 'bigChancesAgainst': 64,
+        }}
+
+    def test_attack_quality(self):
+        q = ps.attack_quality(self._team())
+        self.assertAlmostEqual(q['shots_per_game'], 502/36, places=1)
+        self.assertAlmostEqual(q['sot_rate'], 176/502, places=3)
+        self.assertAlmostEqual(q['big_chances_per_game'], 80/36, places=2)
+        self.assertAlmostEqual(q['goals_per_game'], 59/36, places=2)
+
+    def test_defense_quality(self):
+        q = ps.defense_quality(self._team())
+        self.assertAlmostEqual(q['conceded_per_game'], 36/36, places=2)
+        self.assertAlmostEqual(q['shots_on_target_against'], 136/36, places=2)
+        self.assertAlmostEqual(q['big_chances_against'], 64/36, places=2)
+
+    def test_expected_goals(self):
+        t = self._team()
+        # 双方同队，期望进球应相同（对称）
+        eg = ps.expected_goals(t, t)
+        self.assertIsNotNone(eg)
+        self.assertEqual(eg['home_xg'], eg['away_xg'])
+
+    def test_expected_goals_missing(self):
+        # 缺数据 → None
+        self.assertIsNone(ps.expected_goals({}, {}))
 
 
 if __name__ == '__main__':
