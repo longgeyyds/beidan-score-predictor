@@ -1,12 +1,21 @@
 #!/usr/bin/env python3
 """只从北京体彩官方游戏250开奖XML增量更新历史赛果；不读取SP。"""
 from __future__ import annotations
-import csv, datetime as dt, json, re, urllib.request
+import csv, datetime as dt, json, re, time, urllib.request
 from pathlib import Path
 import xml.etree.ElementTree as ET
 BASE='https://www.bjlot.com.cn';CSV=Path('data/beidan_history_2021_2026.csv');RAW=Path('data/raw');UA='Mozilla/5.0 (compatible; BeidanResearchV2/1.0)'
 FIELDS=['draw_no','match_no','cutoff_time','league','home','away','ht_home','ht_away','ft_home','ft_away']
-def get(u):return urllib.request.urlopen(urllib.request.Request(u,headers={'User-Agent':UA,'Referer':BASE+'/'}),timeout=45).read()
+def get(u,retries=3):
+    """拉取+指数退避重试（修复2026-08-14 IncompleteRead 假失败）。"""
+    last=None
+    for i in range(retries):
+        try:
+            return urllib.request.urlopen(urllib.request.Request(u,headers={'User-Agent':UA,'Referer':BASE+'/'}),timeout=45).read()
+        except Exception as e:
+            last=e
+            if i<retries-1:time.sleep(1.5*(2**i))
+    raise last
 def js(b):
  s=b.decode('utf-8-sig','replace');return json.loads(s[s.index('{'):])
 def text(x,p):

@@ -9,7 +9,9 @@
      bigChancesMissed/goalsScored/goalsConceded/shotsOnTargetAgainst/bigChancesAgainst 等
 4. 把原始 JSON（格式 {队名: {"season": {...}}}）喂给本脚本转存
 
-用法：python3 save_process_data.py <原始JSON路径>
+用法：
+  python3 save_process_data.py <原始JSON路径>                  # 旧格式 {队名: {"season": {...}}}
+  python3 save_process_data.py --from-sofa <sofa期号>          # 新格式 sofa_{期号}.json（fetch_sofa_batch 产物）
 原始JSON格式示例见 process_data.json。
 """
 import json, sys
@@ -36,10 +38,43 @@ def normalize(team_data):
     return {'season': out}
 
 
+def import_from_sofa(draw):
+    """从 fetch_sofa_batch 的 sofa_{期号}.json 批量导入双方赛季统计。"""
+    src = Path('data') / f'sofa_{draw}.json'
+    if not src.exists():
+        sys.exit(f'{src} 不存在，先跑 fetch_sofa_batch.py merge {draw}')
+    data = json.loads(src.read_text(encoding='utf-8'))['matches']
+    raw = {}
+    n_stats = 0
+    for r in data:
+        for side in ('home', 'away'):
+            st = (r.get('stats') or {}).get(side)
+            if st:
+                raw[r[side]] = {'season': st}
+                n_stats += 1
+    if not raw:
+        sys.exit('❌ sofa 数据里没有任何赛季统计，检查 fetch_sofa_batch merge 的 stats 覆盖')
+    existing = {}
+    if DATA.exists():
+        existing = json.loads(DATA.read_text(encoding='utf-8'))
+    existing = {k: v for k, v in existing.items() if not k.startswith('_')}
+    existing.update({t: normalize(d) for t, d in raw.items()})
+    out = {'_comment': '过程数据画像（Sofascore 赛季统计，browser_use 抓取）。含进攻和防守(Against)两端。',
+           '_sources': existing.get('_sources', []) + [f'sofa_{draw}.json'],
+           **{k: v for k, v in existing.items() if not k.startswith('_')}}
+    DATA.write_text(json.dumps(out, ensure_ascii=False, indent=2), encoding='utf-8')
+    print(f'✅ 从 {src.name} 导入 {len(raw)} 条统计（{n_stats} 队次），process_data.json 现有 {len(out)-1} 队')
+
+
 def main():
-    src_path = sys.argv[1] if len(sys.argv) > 1 else None
+    args = sys.argv[1:]
+    if args and args[0] == '--from-sofa':
+        if len(args) < 2:
+            sys.exit('用法: save_process_data.py --from-sofa <期号>')
+        return import_from_sofa(args[1])
+    src_path = args[0] if args else None
     if not src_path or not Path(src_path).exists():
-        print('用法: python3 save_process_data.py <原始JSON路径>')
+        print('用法: python3 save_process_data.py <原始JSON路径>  或  --from-sofa <期号>')
         sys.exit(1)
     raw = json.loads(Path(src_path).read_text(encoding='utf-8'))
 

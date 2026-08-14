@@ -11,7 +11,7 @@
 
 输出：intel/intel_{期号}.json
 """
-import csv, json, re, sys, urllib.request, xml.etree.ElementTree as ET
+import csv, json, re, sys, time, urllib.request, xml.etree.ElementTree as ET
 from collections import defaultdict
 from datetime import datetime, timedelta
 from pathlib import Path
@@ -50,10 +50,19 @@ def norm_league(s):
     return s or '未知赛事'
 
 
-def fetch_xml(draw_no):
+def fetch_xml(draw_no, retries=3):
+    """拉官方XML，指数退避重试（修复2026-08-14 IncompleteRead 假失败）。"""
     url = f'{BASE}/data/250ParlayGetGame_{draw_no}.xml?ts={int(datetime.now().timestamp())}'
     req = urllib.request.Request(url, headers={'User-Agent': UA, 'Referer': BASE + '/'})
-    return urllib.request.urlopen(req, timeout=30).read()
+    last = None
+    for i in range(retries):
+        try:
+            return urllib.request.urlopen(req, timeout=30).read()
+        except Exception as e:
+            last = e
+            if i < retries - 1:
+                time.sleep(1.5 * (2 ** i))
+    raise last
 
 
 def get_schedule(draw_no):
@@ -133,19 +142,27 @@ def h2h_and_mid(rows, home, away, kickoff_str):
     return {'h2h': [x[1] for x in h2h], 'mid': mid}
 
 
-def weather(lat, lon, utc_kickoff_hour):
+def weather(lat, lon, utc_kickoff_hour, retries=3):
     """Open-Meteo 默认返回 UTC 整点。utc_kickoff_hour 形如 '2026-08-13T16:00'。
     开球时刻向下取整到整点（19:25开球 → 查19:00，即开球时进行中的那个小时）。"""
     url = f'https://api.open-meteo.com/v1/forecast?latitude={lat}&longitude={lon}&hourly=temperature_2m,precipitation,wind_speed_10m'
     req = urllib.request.Request(url, headers={'User-Agent': UA})
-    d = json.loads(urllib.request.urlopen(req, timeout=10).read())
-    times = d['hourly']['time']
-    for i, t in enumerate(times):
-        if t == utc_kickoff_hour:
-            return {'time': t, 'temp': d['hourly']['temperature_2m'][i],
-                    'precip': d['hourly']['precipitation'][i],
-                    'wind': d['hourly']['wind_speed_10m'][i]}
-    return None
+    last = None
+    for i in range(retries):
+        try:
+            d = json.loads(urllib.request.urlopen(req, timeout=10).read())
+            times = d['hourly']['time']
+            for j, t in enumerate(times):
+                if t == utc_kickoff_hour:
+                    return {'time': t, 'temp': d['hourly']['temperature_2m'][j],
+                            'precip': d['hourly']['precipitation'][j],
+                            'wind': d['hourly']['wind_speed_10m'][j]}
+            return None
+        except Exception as e:
+            last = e
+            if i < retries - 1:
+                time.sleep(1.0 * (2 ** i))
+    raise last
 
 
 def detect_live_draw():
@@ -163,12 +180,15 @@ def detect_live_draw():
     known = []
     for year, month in months:
         url = f'{BASE}/data/250/control/drawnolist_{year}{month:02d}.js'
-        try:
-            req = urllib.request.Request(url, headers={'User-Agent': UA, 'Referer': BASE + '/'})
-            text = urllib.request.urlopen(req, timeout=15).read().decode('utf-8-sig', 'replace')
-            known.extend(int(x) for x in re.findall(r'"drawno":"(\d{5})"', text))
-        except Exception:
-            pass
+        for i in range(3):
+            try:
+                req = urllib.request.Request(url, headers={'User-Agent': UA, 'Referer': BASE + '/'})
+                text = urllib.request.urlopen(req, timeout=15).read().decode('utf-8-sig', 'replace')
+                known.extend(int(x) for x in re.findall(r'"drawno":"(\d{5})"', text))
+                break
+            except Exception:
+                if i < 2:
+                    time.sleep(1.0 * (2 ** i))
     if not known:
         raise RuntimeError('无法从官方 drawnolist 找到基准期号，请显式传入期号')
     base = max(known)

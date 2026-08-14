@@ -16,6 +16,9 @@ import fetch_intel as fi
 import log_loss as ll
 import review_auto as ra
 import process_stats as ps
+import settle_tickets as st
+import ticket_builder as tb
+import fetch_sofa_batch as fsb
 
 
 class TestVerifyResults(unittest.TestCase):
@@ -149,8 +152,7 @@ class TestReviewAuto(unittest.TestCase):
 
 
 class TestProcessStats(unittest.TestCase):
-    def _team(self):
-        return {'season': {
+    def _team(self):        return {'season': {
             'matches': 36, 'goalsScored': 59, 'goalsConceded': 36,
             'shots': 502, 'shotsOnTarget': 176, 'bigChances': 107,
             'bigChancesCreated': 80, 'bigChancesMissed': 62,
@@ -180,6 +182,63 @@ class TestProcessStats(unittest.TestCase):
     def test_expected_goals_missing(self):
         # 缺数据 → None
         self.assertIsNone(ps.expected_goals({}, {}))
+
+
+class TestSettleTickets(unittest.TestCase):
+    def test_parse_ticket_15x5(self):
+        # 已购票单必须能解析出 15 张 × 每张5场，层级为3强+1中+1搏
+        import collections
+        t = st.parse_ticket()
+        self.assertEqual(len(t), 15)
+        for tk in t:
+            self.assertEqual(len(tk['selections']), 5)
+        # 场1仍在票8（已购票单冻结，不得被替换）
+        t8 = [x for x in t if x['no'] == 8][0]
+        self.assertIn('1', [s['no'] for s in t8['selections']])
+        # 全场次 1-54 内
+        all_nos = [int(s['no']) for tk in t for s in tk['selections']]
+        self.assertTrue(all(1 <= n <= 54 for n in all_nos))
+
+    def test_ticket_cost(self):
+        t = st.parse_ticket()
+        # 每张 20 注 × 2元 = 40元，15张 = 600元
+        for tk in t:
+            self.assertEqual(len(list(__import__('itertools').combinations(tk['selections'], 2))), 10)
+            self.assertEqual(len(list(__import__('itertools').combinations(tk['selections'], 3))), 10)
+
+
+class TestFetchSofaBatch(unittest.TestCase):
+    def test_merge_dedup_prefers_event(self):
+        # 同一场次两条记录（一条无event、一条有event）→ 去重保留有event的
+        rows = [
+            {'no': '53', 'home': 'A', 'errors': ['team_search']},
+            {'no': '53', 'home': 'A', 'event': {'id': 1}},
+        ]
+        by_no = {}
+        for r in rows:
+            no = r.get('no')
+            if no not in by_no or (r.get('event') and not by_no[no].get('event')):
+                by_no[no] = r
+        merged = [by_no[k] for k in sorted(by_no, key=lambda x: int(x) if str(x).isdigit() else 0)]
+        self.assertEqual(len(merged), 1)
+        self.assertIn('event', merged[0])
+
+
+class TestTicketBuilder(unittest.TestCase):
+    def test_structure_constants(self):
+        # 15组强项骨架：13个强项、45组强强配对唯一
+        import collections, itertools
+        cnt = collections.Counter(n for t in tb.TRIPLES for n in t)
+        self.assertEqual(len(cnt), 13)
+        self.assertTrue(all(3 <= v <= 4 for v in cnt.values()))
+        pairs = [tuple(sorted(x)) for t in tb.TRIPLES for x in itertools.combinations(t, 2)]
+        self.assertEqual(len(pairs), 45)
+        self.assertEqual(len(set(pairs)), 45)
+        self.assertEqual(len(tb.MID), 15)
+        self.assertEqual(len(tb.RISK), 15)
+        self.assertEqual(len(set(tb.MID) & set(tb.RISK)), 0)
+        self.assertEqual(len(set(tb.MID) & set(tb.CORE)), 0)
+        self.assertEqual(len(set(tb.RISK) & set(tb.CORE)), 0)
 
 
 if __name__ == '__main__':

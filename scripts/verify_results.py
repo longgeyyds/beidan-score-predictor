@@ -5,7 +5,7 @@
 早期 XML 的 soccer 字段可能为空或未更新），导致本地 CSV 与官方最终赛果不一致。
 本脚本在复盘前强制用官方最新 XML 复核，发现不一致立即报警并提示修正。
 """
-import csv, re, sys, urllib.request, xml.etree.ElementTree as ET
+import csv, re, sys, time, urllib.request, xml.etree.ElementTree as ET
 from datetime import datetime
 
 BASE = 'https://www.bjlot.com.cn'
@@ -23,10 +23,19 @@ def pair(s):
     return (m.group(1), m.group(2)) if m else ('', '')
 
 
-def fetch_xml(draw_no):
+def fetch_xml(draw_no, retries=3):
+    """拉官方XML，指数退避重试（修复2026-08-14 IncompleteRead 假失败）。"""
     url = f'{BASE}/data/250ParlayGetGame_{draw_no}.xml?ts={int(datetime.now().timestamp())}'
     req = urllib.request.Request(url, headers={'User-Agent': UA, 'Referer': BASE + '/'})
-    return urllib.request.urlopen(req, timeout=30).read()
+    last = None
+    for i in range(retries):
+        try:
+            return urllib.request.urlopen(req, timeout=30).read()
+        except Exception as e:
+            last = e
+            if i < retries - 1:
+                time.sleep(1.5 * (2 ** i))
+    raise last
 
 
 def verify(draw_no):

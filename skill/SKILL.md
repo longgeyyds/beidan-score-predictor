@@ -1,7 +1,7 @@
 ---
 name: beidan-score-predictor
 description: 北京单场足球比分预测。当用户要求预测北单比分、分析今日场次、复盘北单赛果、推荐单场比分时使用。吸收开源足球预测skill经验：固定权重、防数据泄漏、近期画面优先、双轨结算、比分概率分布、校准评估(log-loss/置信度校准表，2026-08-12从GitHub生态学习)、已验证排除项(Dixon-Coles实测证伪)。核心纪律：比分生成与排序完全不参考SP；**SP>5过滤规则已去掉（2026-08-10用户要求），SP完全不参与选场与过滤**。
-version: 2.0.0
+version: 2.1.0
 ---
 
 # 北单比分预测 Skill
@@ -332,7 +332,16 @@ version: 2.0.0
 | `sync_github.py` | 自动同步到GitHub并push | 每次预测/复盘后 |
 | `self_check.py` | 主动自检（8类历史坑） | **每次预测/复盘/改脚本后，主动跑** |
 | `process_stats.py` | 过程数据画像 → 期望进球 | 预测前（读 process_data.json） |
-| `save_process_data.py` | browser_use 抓取的赛季统计 → 规范化转存 | 抓取过程数据后 |
+| `save_process_data.py` | browser_use 抓取的赛季统计 → 规范化转存；`--from-sofa <期号>` 批量导入 fetch_sofa_batch 产物 | 抓取过程数据后 |
+| `fetch_sofa_batch.py` | **正式版 Sofascore 批量抓取器**（替代一次性脚本）：gen 生成批次→run_all.sh 执行→merge 合并去重→cache 回填坐标。自带重试与进度 | 每期预测前 |
+| `ticket_builder.py` | 串关票单生成/校验：build 按强/中/搏生成15张×5场；**validate 硬检查所有场次官方"销售中"**（已开奖/停售场次禁止入单，只报警不改已购票单） | 出票前 |
+| `settle_tickets.py` | 按票面自动结算：读票单MD+官方赛果+SP，逐张算20注（10二串+10三串）命中与返还 | 开奖后 |
 | `test_scripts.py` | 核心脚本单元测试（18个） | 改脚本后必跑 |
 
 **纪律**：改任何脚本后跑 `python3 test_scripts.py` 必须全绿；复盘前跑 `verify_results.py` 防数据错；同步走 `sync_github.py` 不手动；**每次收工前跑 `self_check.py` 主动自检，不等用户催**。
+
+**2026-08-14 新增纪律（体检后定）**：
+- **网络请求必须带重试**：fetch_intel/verify_results/update_history 已内置指数退避（3次）；新增脚本默认同样处理，禁止裸 urlopen
+- **出票流程**：预测冻结 → `ticket_builder.py build` 生成票单（自动硬检查销售中）→ 人工确认 → 出票后**票单文件冻结，不得再改**（8/14 教训：发现场1已开球后我改了已购票单，被用户纠正；发现问题应报告，不是改记录）
+- **复盘自动记账**：`review_auto.py` 结算后自动追加 review_ledger.md（版本C行+置信度累计），禁止手写账本（8/14 教训：26084期漏记）
+- **process_data 必须落地**：每期过程数据抓完跑 `save_process_data.py --from-sofa <期号>`，禁止只抓不存（8/14 教训：46场过程数据差点全丢）

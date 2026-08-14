@@ -10,7 +10,7 @@
   python3 review_auto.py 26084 [预测JSON路径]
   # 默认读 predict_26084.json；带 p 字段时顺便输出 log-loss
 """
-import json, math, sys
+import json, math, re, sys
 from pathlib import Path
 
 import verify_results as vr
@@ -18,15 +18,70 @@ import verify_results as vr
 BASE_P = 0.12
 BASE_LL = BASE_P * (-math.log(BASE_P)) + (1 - BASE_P) * (-math.log(1 - BASE_P))
 
+LEDGER = Path('docs/review_ledger.md')
+
 
 def dir_of(score):
     h, a = score.split(':')
     return 'H' if h > a else ('D' if h == a else 'A')
 
 
+def append_ledger(draw_no, n, hit, dir_hit, by_conf, mismatches):
+    """复盘后自动追加账本（修复手写漏记 26084 的问题）。"""
+    if n == 0:
+        print('⚠️ 无已开奖场次，不写账本')
+        return
+    if not LEDGER.exists():
+        print(f'⚠️ 账本不存在: {LEDGER}')
+        return
+    txt = LEDGER.read_text(encoding='utf-8')
+    date = __import__('datetime').datetime.now().strftime('%m-%d')
+    pct = hit / n * 100
+    dpct = dir_hit / n * 100
+    row = f'| {date} | {draw_no}期 | {n} | {hit} | {pct:.1f}% | {dpct:.1f}% |'
+    # 追加到版本C表格（找最后一行数据行，插在其后）
+    lines = txt.split('\n')
+    c_section = False
+    inserted = False
+    for i, ln in enumerate(lines):
+        if ln.startswith('### 版本C'):
+            c_section = True
+        if c_section and ln.startswith('| 08-') and not inserted:
+            lines.insert(i + 1, row)
+            inserted = True
+            break
+        if c_section and ln.strip() == '' and not inserted:
+            lines.insert(i, row)
+            inserted = True
+            break
+    if not inserted:
+        lines.append(row)
+    # 更新置信度分级累计（A/B/C 行的命中/场次）
+    for conf in sorted(by_conf):
+        c = by_conf[conf]
+        prefix = f'| {conf}级 |'
+        for i, ln in enumerate(lines):
+            if ln.startswith(prefix) and '样本不足' in ln:
+                parts = ln.split('|')
+                # ['', ' A级 ', ' 情报... ', ' 1/6 ', ' 16.7% ', ' 样本不足(n=6) ', '']
+                if len(parts) >= 6 and '/' in parts[3]:
+                    old_hit, old_n = parts[3].strip().split('/')
+                    new_hit = int(old_hit) + c['hit']
+                    new_n = int(old_n) + c['n']
+                    parts[3] = f' {new_hit}/{new_n} '
+                    parts[4] = f' {new_hit / new_n * 100:.1f}% '
+                    parts[5] = f' 样本不足(n={new_n}) '
+                    lines[i] = '|'.join(parts)
+                    break
+    LEDGER.write_text('\n'.join(lines), encoding='utf-8')
+    print(f'✅ 账本已追加 {draw_no}：{n}场 {hit}中={pct:.1f}% | 方向 {dpct:.1f}%')
+
+
 def main():
     draw_no = sys.argv[1] if len(sys.argv) > 1 else '26084'
-    pred_path = sys.argv[2] if len(sys.argv) > 2 else f'predict_{draw_no}.json'
+    args = sys.argv[2:]
+    no_ledger = '--no-ledger' in args
+    pred_path = next((a for a in args if not a.startswith('--')), None) or f'predict_{draw_no}.json'
     if not Path(pred_path).exists():
         print(f'预测文件不存在: {pred_path}')
         sys.exit(1)
@@ -79,6 +134,8 @@ def main():
             print(f'  {conf}级: {c["hit"]}/{c["n"]} = {c["hit"]/c["n"]*100:.1f}%')
     if mismatches:
         print(f'⚠️ 注意：{len(mismatches)} 场 CSV 与官方不一致，已用官方值')
+    if not no_ledger:
+        append_ledger(draw_no, n, hit, dir_hit, by_conf, mismatches)
 
 
 if __name__ == '__main__':
