@@ -132,7 +132,13 @@ def main():
             eg = expected_goals(data[home], data[away])
             if eg:
                 print(f'\n对位 {home} vs {away}: 期望 {eg["home_xg"]}:{eg["away_xg"]}')
-                print(f'  → 比分候选: {round(eg["home_xg"])}:{round(eg["away_xg"])}')
+                # 期望进球 → 精确比分候选（死磕比分，不是大小球）
+                h = round(eg['home_xg']); a = round(eg['away_xg'])
+                print(f'  → 精确比分候选: {h}:{a}')
+                # 附第二候选（四舍五入的另一方向）
+                h2 = int(eg['home_xg']); a2 = int(eg['away_xg'])
+                if (h, a) != (h2, a2):
+                    print(f'    第二候选: {h2}:{a2}')
 
 
 if __name__ == '__main__':
