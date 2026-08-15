@@ -46,7 +46,7 @@ DOC_REPORTS = [
     'review_ledger.md', 'league_diagnosis_report.md', 'win_rate_improvement_analysis.md',
     'backtest_v8_report.md', 'backtest_v9_report.md', 'backtest_v10_report.md',
     'review_20260807.md', 'review_20260808.md', 'review_20260809.md',
-    'review_20260810.md', 'review_20260812.md', 'review_failures_all.md', 'review_26085_per_match.md',
+    'review_20260810.md', 'review_20260812.md', 'review_failures_all.md', 'review_26085_per_match.md', 'lesson_handbook.md',
 ]
 
 
