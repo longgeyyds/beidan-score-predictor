@@ -1,97 +1,16 @@
 {
   "draw_no": "26085",
   "window": "2026-08-15 10:00—2026-08-16 10:00",
-  "method": "主客场对位差定方向+真实分布给比分",
+  "method": "主客场对位差方向+逐场攻防对位比分+伤停落方向",
   "predictions": {
-    "198": {
-      "home": "科罗拉多急流",
-      "away": "堪萨斯城体育",
-      "pred": "2:1",
-      "score": "2:1",
-      "direction": "主胜",
-      "ticket": 2,
-      "note": ""
-    },
-    "158": {
-      "home": "KTP科特卡",
-      "away": "卡帕",
-      "pred": "1:0",
-      "score": "1:0",
-      "direction": "主胜",
-      "ticket": 2,
-      "note": ""
-    },
-    "126": {
-      "home": "阿伯丁",
-      "away": "邓迪FC",
-      "pred": "2:0",
-      "score": "2:0",
-      "direction": "主胜",
-      "ticket": 2,
-      "note": ""
-    },
-    "84": {
-      "home": "博尔顿",
-      "away": "普雷斯顿",
-      "pred": "2:1",
-      "score": "2:1",
-      "direction": "主胜",
-      "ticket": 2,
-      "note": ""
-    },
-    "57": {
-      "home": "秋田蓝色闪电",
-      "away": "富山胜利",
-      "pred": "1:0",
-      "score": "1:0",
-      "direction": "主胜",
-      "ticket": 2,
-      "note": ""
-    },
     "168": {
       "home": "威尼斯",
       "away": "摩德纳",
-      "pred": "2:1",
-      "score": "2:1",
+      "pred": "3:0",
+      "score": "3:0",
       "direction": "主胜",
-      "ticket": 3,
-      "note": ""
-    },
-    "145": {
-      "home": "科特赖克",
-      "away": "安特卫普",
-      "pred": "2:1",
-      "score": "2:1",
-      "direction": "主胜",
-      "ticket": 3,
-      "note": ""
-    },
-    "132": {
-      "home": "奥地利卢斯特瑙",
-      "away": "沃尔夫斯贝格",
-      "pred": "1:0",
-      "score": "1:0",
-      "direction": "主胜",
-      "ticket": 3,
-      "note": ""
-    },
-    "182": {
-      "home": "利马切",
-      "away": "智利大学",
-      "pred": "3:2",
-      "score": "3:2",
-      "direction": "主胜",
-      "ticket": 3,
-      "note": ""
-    },
-    "94": {
-      "home": "松兹瓦尔",
-      "away": "赫尔辛堡",
-      "pred": "1:4",
-      "score": "1:4",
-      "direction": "客胜",
-      "ticket": 3,
-      "note": ""
+      "ticket": 2,
+      "reason": "威尼斯主场进2.7失0.3碾压，摩德纳客场0.8哑火"
     },
     "164": {
       "home": "比尔森胜利",
@@ -99,44 +18,53 @@
       "pred": "3:1",
       "score": "3:1",
       "direction": "主胜",
-      "ticket": 4,
-      "note": ""
+      "ticket": 2,
+      "reason": "比尔森主场进2.0，兹林客场失2.8崩"
     },
-    "183": {
-      "home": "尤文图德",
-      "away": "福塔莱萨",
-      "pred": "1:0",
-      "score": "1:0",
+    "198": {
+      "home": "科罗拉多急流",
+      "away": "堪萨斯城体育",
+      "pred": "2:0",
+      "score": "2:0",
       "direction": "主胜",
-      "ticket": 4,
-      "note": ""
+      "ticket": 2,
+      "reason": "科罗拉多靠堪萨斯城客场失3.7崩赢，自己主场只进1.2"
     },
     "148": {
       "home": "奥地利维也纳二队",
       "away": "奥地利萨尔茨堡",
-      "pred": "0:3",
-      "score": "0:3",
+      "pred": "0:2",
+      "score": "0:2",
       "direction": "客胜",
-      "ticket": 4,
-      "note": ""
+      "ticket": 2,
+      "reason": "萨尔茨堡客场进1.5失0.7，奥维二队主场失2.2"
     },
-    "104": {
-      "home": "布莱克浦",
-      "away": "威科姆流浪者",
-      "pred": "1:0",
-      "score": "1:0",
+    "63": {
+      "home": "千叶市原",
+      "away": "町田泽维亚",
+      "pred": "1:3",
+      "score": "1:3",
+      "direction": "客胜",
+      "ticket": 2,
+      "reason": "町田客场进2.2火，千叶主场失2.0"
+    },
+    "158": {
+      "home": "KTP科特卡",
+      "away": "卡帕",
+      "pred": "3:1",
+      "score": "3:1",
       "direction": "主胜",
-      "ticket": 4,
-      "note": ""
+      "ticket": 3,
+      "reason": "KTP主场进2.3，卡帕客场0.7哑火失2.3"
     },
-    "101": {
-      "home": "朴茨茅斯",
-      "away": "女王公园巡游者",
-      "pred": "0:1",
-      "score": "0:1",
-      "direction": "客胜",
-      "ticket": 4,
-      "note": "门将Bursik+3锋线全伤"
+    "145": {
+      "home": "科特赖克",
+      "away": "安特卫普",
+      "pred": "3:1",
+      "score": "3:1",
+      "direction": "主胜",
+      "ticket": 3,
+      "reason": "科特赖克主场进3.0火力，安特卫普客场1.2"
     },
     "89": {
       "home": "奥德汉姆",
@@ -144,62 +72,179 @@
       "pred": "2:0",
       "score": "2:0",
       "direction": "主胜",
-      "ticket": 5,
-      "note": ""
+      "ticket": 3,
+      "reason": "奥德汉姆主场进1.7失0.5，维尔港客场进1.0失2.5"
     },
-    "55": {
-      "home": "鹿岛鹿角",
-      "away": "名古屋鲸",
-      "pred": "3:1",
-      "score": "3:1",
-      "direction": "主胜",
-      "ticket": 5,
-      "note": ""
+    "94": {
+      "home": "松兹瓦尔",
+      "away": "赫尔辛堡",
+      "pred": "1:3",
+      "score": "1:3",
+      "direction": "客胜",
+      "ticket": 3,
+      "reason": "赫尔辛堡客场进1.8，松兹瓦尔主场失2.5"
     },
-    "165": {
-      "home": "罗兹维德祖",
-      "away": "凯尔采科罗纳",
-      "pred": "1:0",
-      "score": "1:0",
-      "direction": "主胜",
-      "ticket": 5,
-      "note": ""
-    },
-    "63": {
-      "home": "千叶市原",
-      "away": "町田泽维亚",
+    "101": {
+      "home": "朴茨茅斯",
+      "away": "女王公园巡游者",
       "pred": "0:2",
       "score": "0:2",
-      "direction": "客胜",
-      "ticket": 5,
-      "note": ""
-    },
-    "157": {
-      "home": "托里什恩斯",
-      "away": "佩纳菲耶尔",
-      "pred": "2:0",
-      "score": "2:0",
       "direction": "主胜",
-      "ticket": 5,
-      "note": ""
+      "ticket": 3,
+      "reason": "朴茨茅斯门将Bursik+3锋线全伤进攻瘫痪，方向改客胜QPR"
     },
     "177": {
       "home": "马略卡",
       "away": "巴利亚多利德",
-      "pred": "4:0",
-      "score": "4:0",
+      "pred": "2:0",
+      "score": "2:0",
       "direction": "主胜",
-      "ticket": 6,
-      "note": ""
+      "ticket": 4,
+      "reason": "马略卡主场进2.0失0.7，巴利亚多利德客场0.5哑火"
+    },
+    "192": {
+      "home": "圣保罗",
+      "away": "科里蒂巴",
+      "pred": "2:0",
+      "score": "2:0",
+      "direction": "主胜",
+      "ticket": 4,
+      "reason": "圣保罗主场稳，科里蒂巴客场0.3哑火+门将Rangel伤"
+    },
+    "84": {
+      "home": "博尔顿",
+      "away": "普雷斯顿",
+      "pred": "3:1",
+      "score": "3:1",
+      "direction": "主胜",
+      "ticket": 4,
+      "reason": "博尔顿主场进2.8火力，普雷斯顿客场进1.3失2.0"
+    },
+    "87": {
+      "home": "雷丁",
+      "away": "卢顿",
+      "pred": "1:2",
+      "score": "1:2",
+      "direction": "客胜",
+      "ticket": 4,
+      "reason": "卢顿客场进2.5火，雷丁主场进1.5"
+    },
+    "57": {
+      "home": "秋田蓝色闪电",
+      "away": "富山胜利",
+      "pred": "1:0",
+      "score": "1:0",
+      "direction": "主胜",
+      "ticket": 4,
+      "reason": "秋田主场失0.3，富山客场0.3哑火，双闷主队小胜"
+    },
+    "55": {
+      "home": "鹿岛鹿角",
+      "away": "名古屋鲸",
+      "pred": "2:0",
+      "score": "2:0",
+      "direction": "主胜",
+      "ticket": 5,
+      "reason": "鹿岛主场进1.7失0.3，名古屋客场失2.3"
+    },
+    "183": {
+      "home": "尤文图德",
+      "away": "福塔莱萨",
+      "pred": "2:0",
+      "score": "2:0",
+      "direction": "主胜",
+      "ticket": 5,
+      "reason": "尤文图德主场失0.2防守好，福塔莱萨客场0.5哑火"
+    },
+    "166": {
+      "home": "凯泽斯劳滕",
+      "away": "卡尔斯鲁厄",
+      "pred": "2:1",
+      "score": "2:1",
+      "direction": "主胜",
+      "ticket": 5,
+      "reason": "凯泽主场进1.7，卡尔斯鲁厄客场进1.0能进1"
+    },
+    "104": {
+      "home": "布莱克浦",
+      "away": "威科姆流浪者",
+      "pred": "2:1",
+      "score": "2:1",
+      "direction": "主胜",
+      "ticket": 5,
+      "reason": "布莱克浦主场进1.7失0.7，威科姆客场1.7能进"
+    },
+    "157": {
+      "home": "托里什恩斯",
+      "away": "佩纳菲耶尔",
+      "pred": "2:1",
+      "score": "2:1",
+      "direction": "主胜",
+      "ticket": 5,
+      "reason": "托里什恩斯主场进1.7失0.5，佩纳菲耶尔客场1.3"
     },
     "141": {
       "home": "FAC维也纳",
       "away": "阿姆施泰滕",
-      "pred": "2:1",
-      "score": "2:1",
+      "pred": "1:0",
+      "score": "1:0",
       "direction": "主胜",
       "ticket": 6,
-      "note": ""
+      "reason": "FAC主场进1.3失0.5，阿姆施泰滕客场0.7哑火"
+    },
+    "96": {
+      "home": "吉波",
+      "away": "塞伊奈约基学院",
+      "pred": "2:0",
+      "score": "2:0",
+      "direction": "主胜",
+      "ticket": 6,
+      "reason": "吉波主场进1.5失0.7，学院客场0.5哑火"
+    },
+    "126": {
+      "home": "阿伯丁",
+      "away": "邓迪FC",
+      "pred": "2:0",
+      "score": "2:0",
+      "direction": "主胜",
+      "ticket": 6,
+      "reason": "阿伯丁主场进1.5失0.7，邓迪客场0.5哑火"
+    },
+    "132": {
+      "home": "奥地利卢斯特瑙",
+      "away": "沃尔夫斯贝格",
+      "pred": "2:0",
+      "score": "2:0",
+      "direction": "主胜",
+      "ticket": 6,
+      "reason": "卢斯特瑙主场进2.0失0.5，沃尔夫斯贝格客场失1.8"
+    },
+    "175": {
+      "home": "都灵",
+      "away": "卡拉拉",
+      "pred": "1:0",
+      "score": "1:0",
+      "direction": "主胜",
+      "ticket": 6,
+      "reason": "都灵主场进2.3但锋Pellegri十字韧带伤降档，卡拉拉客场1.0"
+    },
+    "182": {
+      "home": "利马切",
+      "away": "智利大学",
+      "pred": "2:0",
+      "score": "2:0",
+      "direction": "主胜",
+      "ticket": 7,
+      "reason": "利马切主场进2.3失0.5，智利大学客场0.8哑火"
+    },
+    "165": {
+      "home": "罗兹维德祖",
+      "away": "凯尔采科罗纳",
+      "pred": "2:0",
+      "score": "2:0",
+      "direction": "主胜",
+      "ticket": 7,
+      "reason": "罗兹维德祖主场进1.7失0.7，科罗纳客场0.7哑火"
     },
     "67": {
       "home": "仙台七夕",
@@ -207,71 +252,26 @@
       "pred": "2:0",
       "score": "2:0",
       "direction": "主胜",
-      "ticket": 6,
-      "note": ""
+      "ticket": 7,
+      "reason": "仙台主场进1.7失0.8，大分客场0.5哑火"
     },
     "117": {
       "home": "格里姆斯比",
       "away": "埃克塞特城",
-      "pred": "3:2",
-      "score": "3:2",
-      "direction": "主胜",
-      "ticket": 6,
-      "note": ""
-    },
-    "175": {
-      "home": "都灵",
-      "away": "卡拉拉",
-      "pred": "3:1",
-      "score": "3:1",
-      "direction": "主胜",
-      "ticket": 6,
-      "note": ""
-    },
-    "192": {
-      "home": "圣保罗",
-      "away": "科里蒂巴",
       "pred": "2:1",
       "score": "2:1",
       "direction": "主胜",
       "ticket": 7,
-      "note": ""
-    },
-    "96": {
-      "home": "吉波",
-      "away": "塞伊奈约基学院",
-      "pred": "2:1",
-      "score": "2:1",
-      "direction": "主胜",
-      "ticket": 7,
-      "note": ""
-    },
-    "166": {
-      "home": "凯泽斯劳滕",
-      "away": "卡尔斯鲁厄",
-      "pred": "4:0",
-      "score": "4:0",
-      "direction": "主胜",
-      "ticket": 7,
-      "note": ""
+      "reason": "格里姆斯比主场进2.5，埃克塞特客场0.8"
     },
     "107": {
       "home": "剑桥联",
       "away": "维冈竞技",
-      "pred": "1:0",
-      "score": "1:0",
+      "pred": "2:0",
+      "score": "2:0",
       "direction": "主胜",
       "ticket": 7,
-      "note": ""
-    },
-    "87": {
-      "home": "雷丁",
-      "away": "卢顿",
-      "pred": "0:1",
-      "score": "0:1",
-      "direction": "客胜",
-      "ticket": 7,
-      "note": ""
+      "reason": "剑桥主场进2.0失0.7，维冈客场0.8哑火"
     }
   }
 }
