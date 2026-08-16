@@ -46,7 +46,7 @@ DOC_REPORTS = [
     'review_ledger.md', 'league_diagnosis_report.md', 'win_rate_improvement_analysis.md',
     'backtest_v8_report.md', 'backtest_v9_report.md', 'backtest_v10_report.md',
     'review_20260807.md', 'review_20260808.md', 'review_20260809.md',
-    'review_20260810.md', 'review_20260812.md', 'review_failures_all.md', 'review_26085_per_match.md', 'lesson_handbook.md', 'picture_experience.md',
+    'review_20260810.md', 'review_20260812.md', 'review_failures_all.md', 'review_26085_per_match.md', 'review_26085_supplement.md', 'lesson_handbook.md', 'picture_experience.md',
 ]
 
 
@@ -76,8 +76,8 @@ def sync_files():
         if src.exists():
             shutil.copy2(src, DST / 'docs' / f)
             copied.append(f'docs/{f}')
-    # docs/examples 预测快照
-    for src in sorted(SRC.glob('manual_predictions_*.md')) + sorted(SRC.glob('recheck_*.md')):
+    # docs/examples 预测快照 + 票单 + 天气
+    for src in sorted(SRC.glob('manual_predictions_*.md')) + sorted(SRC.glob('recheck_*.md')) + sorted(SRC.glob('ticket_plan_*.md')) + sorted(SRC.glob('weather_*.md')):
         shutil.copy2(src, DST / 'docs' / 'examples' / src.name)
         copied.append(f'docs/examples/{src.name}')
     # data CSV
@@ -90,6 +90,12 @@ def sync_files():
     if vc.exists():
         shutil.copy2(vc, DST / 'data' / 'venue_cache.json')
         copied.append('data/venue_cache.json')
+    # 结构化预测 JSON（自己生成，非Sofascore版权数据；只发最终版，跳过 _w* 中间草稿与 _auto 自动版）
+    for src in sorted(SRC.glob('predict_*.json')):
+        if '_w' in src.name or '_auto' in src.name:
+            continue
+        shutil.copy2(src, DST / 'data' / src.name)
+        copied.append(f'data/{src.name}')
     # 清理绝对路径（所有 .md/.py）
     for p in DST.rglob('*'):
         if not p.is_file() or p.suffix not in ('.md', '.py'):
