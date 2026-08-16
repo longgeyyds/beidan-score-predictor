@@ -197,7 +197,7 @@ version: 3.1.0
    - **怎么拿 season 参数**：`/api/v1/team/{id}/events/next/0` → `event.season.id` + `event.tournament.uniqueTournament.id`
    - **计算**：`process_stats.py` 算双方期望进球（进攻系数=重大机会创造+射正率，防守系数=被创造重大机会+被射正），`save_process_data.py` 转存抓取的原始数据
    - **定位（死磕精确比分，不碰大小球）**：过程数据推导出的期望进球，**直接映射成精确比分候选**——如期望 2.57:3.89 → 候选 2:3 / 3:4，这就是精确比分预测，不是大小球。
-   - **⚠️ 诚实边界**：①真 xG 免费层拿不到（shotmap 404），只有 bigChances 这个粗糙代理；②当前赛季刚开季时 statistics 端点 404，只有上赛季数据（赛季更替期要打折）；③**无法历史回测**（免费源不给历史当时的过程数据），只能前瞻实盘验证；④初版期望进球公式系数偏高（实测贝西克塔斯vs本菲卡算出3:4，偏大），**系数待实盘校准——校准目标就是让"期望进球→精确比分"的命中率提高，不是退回去看大小球**
+   - **⚠️ 诚实边界**：①xG 有两条路——`/api/v1/event/{id}` 单场 stats 里 **有 `expectedGoals`/`expectedGoalsOnTarget` 字段**（2026-08-16 发现，免费层就有，之前误判"拿不到"）；真正的 shotmap 级逐射门 xG 仍拿不到（404）。用 bigChances + expectedGoals 两个代理；②当前赛季刚开季时 statistics 端点 404，只有上赛季数据（赛季更替期要打折）；③**无法历史回测**（免费源不给历史当时的过程数据），只能前瞻实盘验证；④初版期望进球公式系数偏高（实测贝西克塔斯vs本菲卡算出3:4，偏大），**系数待实盘校准——校准目标就是让"期望进球→精确比分"的命中率提高，不是退回去看大小球**
 
 **不可用源（别再试）：** FBref/Transfermarkt（Cloudflare/AWS WAF）、football-data.org（需key）、api-football（需注册key且免费层100次/天）、PyPI transfermarkt库（无aarch64 wheel）、FotMob（API 404 已封，2026-08-13实测）
 
@@ -249,6 +249,16 @@ version: 3.1.0
    - **体能**：近7天赛程密度（双线作战/一周双赛，主力腿抬不起来）。
    - **教练**：临场指挥，Sofascore `/api/v1/event/{id}` 有 `manager.name`（免费，浏览器抓）。
    - **天气**：Open-Meteo（已做）。
+   - **战术风格对位（2026-08-16 新增，谁克制谁）**：资深球迷先问"这俩队怎么踢"。摆大巴弱队闷死强队→低比分；防反打高压→冷门大比分；控球打摆大巴→久攻不下0:0。**数据已在 sofa_145_full.json 的 stats 里**：`averageBallPossession`(控球)、`fastBreaks/fastBreakGoals`(防反)、`successfulDribbles`(个人突破)、`blockedScoringAttempt`(封堵=摆大巴)、`longBalls`(长传冲吊)、`duelsWon/aerialDuelsWon`(身体vs技术)、`fouls`(硬朗度)。
+   - **定位球（2026-08-16 新增，约30%进球来自定位球）**：靠定位球的队运动战打不开也能进；高中锋+角球战术靠头球。**stats 字段**：`freeKickGoals`(任意球)、`penaltyGoals`(点球)、`corners`(角球)、`headedGoals`(头球)、`accurateCrosses`(传中)、`penaltyGoalsConceded`(被判点球)。
+   - **纪律/红牌风险（2026-08-16 新增）**：犯规多的队易吃红牌→少一人→崩盘大比分；送点多→白给点球。**stats 字段**：`yellowCards` `redCards` `fouls` `penaltiesCommited`。
+   - **开场节奏/慢热（2026-08-16 新增，谁先进球大幅提高胜率）**：先进球后胜率 0.27→0.59（对强队）/0.68→0.92（对弱队，sportbotai 数据）。慢热队上半场0球下半场爆发。**streaks 字段（此前完全没读）**：`First to score/concede`、`First half winner/loser`、`Both teams scoring`、`Less/More than 2.5 goals`。
+   - **门将状态（2026-08-16 新增）**：门将神勇→零封概率高；门将失误多→白送分。**stats 字段**：`saves` `goalsPrevented` `errorsLeadingToGoal`。
+   - **关键球员状态（2026-08-16 新增，进球荒vs连续进球）**：主力射手6场球荒 vs 连续进球，直接定该队进球数。我此前只看"伤没伤"。数据需补抓 players 端点。
+   - **旅行距离（2026-08-16 新增）**：南美解放者杯/欧战客场长途跋涉，下半场体能崩。venue_cache.json 有坐标，可算主客距离。
+   - **德比/死敌（2026-08-16 新增，需知识库）**：进球少、牌多、冷门多、平局多，情绪抹平实力差（主场胜率降3-5%）。Sofascore 无字段，需手工标注。
+   - **新帅上任（2026-08-16 新增，换帅如换刀）**：新帅首秀战意足打法变，冷门多。数据需补抓 team coach+上任时间。
+   - **⚠️ 全部按【假设】处理（样本从0攒起）**：这些维度每个都是"资深球迷会看"的定性经验+学术/分析文章支撑，但**在精确比分赛道还没攒够实战样本**，先当"倾向/参考"，不直接当铁律。落地顺序：改脚本读 stats/streaks（零新增抓取）→ 补抓裁判/新帅/球员状态 → 建德比知识库。
 3. **逐场算"主客场对位差"**（方向的核心信号）：
    - 主队主场净胜 = 主队近6场**主场**的(进球-失球)均值
    - 客队客场净胜 = 客队近6场**客场**的(进球-失球)均值
@@ -344,6 +354,8 @@ version: 3.1.0
 - 球场坐标缓存：`venue_cache.json`（fetch_intel.py 读取）
 - 结构化预测清单：`predict_*.json`（review_auto.py 读取）
 - 累计账本：`docs/review_ledger.md`
+- 资深球迷增量维度（2026-08-16）：`veteran_fan_dimensions.md`
+- 德比/死敌知识库（2026-08-16）：`derby_knowledge_base.md`
 - GitHub公开仓库：``（push到 longgeyyds/beidan-score-predictor）
 
 ## 工具脚本清单（2026-08-13 补齐，防留尾巴）
@@ -351,6 +363,7 @@ version: 3.1.0
 | 脚本 | 作用 | 何时用 |
 |---|---|---|
 | `fetch_intel.py` | 自动拉赛程SP+近期状态+首回合/中间比赛+天气 → JSON | 预测前 |
+| `fetch_live_intel.py` | **活情报层 v2（2026-08-16）**：士气轨迹/体能密度/战术风格/定位球/纪律/门将/xG/开场节奏/旅行距离 → live_intel_*.json | 预测前（读 intel_*.json + sofa_*.json） |
 | `verify_results.py` | 官方XML复核本地CSV，报警不一致 | **复盘前强制** |
 | `review_auto.py` | 读官方XML+预测JSON，自动对比+统计 | 复盘时 |
 | `log_loss.py` | 概率校准度评估（基线0.367，非2.12） | 复盘时（下期起预测带p） |
