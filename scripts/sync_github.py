@@ -33,7 +33,7 @@ PATH_REPLACEMENTS = [
 ]
 
 CORE_SCRIPTS = [
-    'verify_results.py', 'bets_ev.py', 'fetch_intel.py', 'update_history.py',
+    'verify_results.py', 'bets_ev.py', 'fetch_intel.py', 'fetch_live_intel.py', 'update_history.py',
     'log_loss.py', 'review_auto.py', 'sync_github.py', 'test_scripts.py',
     'self_check.py', 'process_stats.py', 'save_process_data.py',
     'backtest_v8_league_mode.py', 'backtest_v9_halfyear_strict.py',
