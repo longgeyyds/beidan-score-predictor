@@ -28,8 +28,33 @@ from pathlib import Path
 
 BASE = Path('/var/minis/shared/beidan_score')
 CSV = BASE / 'data' / 'beidan_history_2021_2026.csv'
-SOFA = BASE / 'data' / 'sofa_145_full.json'
 VENUE_CACHE = BASE / 'venue_cache.json'
+
+
+def load_sofa(draw):
+    """合并 data/ 下所有 sofa_*.json（按场次号去重，优先保留有 event/stats 的记录）。
+
+    不同批次抓的场次号不同（如 sofa_26085.json=场1-54、sofa_145_full.json=场55-199），
+    必须合并才能覆盖完整赛程。queries 文件除外。
+    """
+    merged = {}
+    files = sorted(BASE.glob('data/sofa_*.json'))
+    for p in files:
+        if 'queries' in p.name:
+            continue
+        try:
+            rows = json.loads(p.read_text(encoding='utf-8'))['matches']
+        except Exception:
+            continue
+        for r in rows:
+            no = r.get('no')
+            if no is None:
+                continue
+            if no not in merged or (r.get('event') and not merged[no].get('event')):
+                merged[no] = r
+    if not merged:
+        sys.exit('❌ data/ 下无 sofa_*.json，先跑 fetch_sofa_batch.py 抓取')
+    return merged
 
 
 def load_history():
@@ -74,13 +99,15 @@ def morale(hist, team, n=5):
     return {'轨迹': trail, '胜': wins, '负': loses, key: abs(streak), 'streak': streak}
 
 
-def density(sofa_form, days=7, ref_date='2026-08-15'):
-    """近days天踢了几场（体能负荷）。"""
+def density(sofa_form, days=7, ref=None):
+    """近days天踢了几场（体能负荷）。ref=预测期最早开赛日，从 intel kickoff 动态推，不硬编码。"""
     from datetime import datetime
+    if ref is None:
+        ref = datetime.now()
     try:
-        ref = datetime.strptime(ref_date, '%Y-%m-%d')
+        ref = datetime.strptime(ref, '%Y-%m-%d') if isinstance(ref, str) else ref
     except Exception:
-        ref = datetime(2026, 8, 15)
+        ref = datetime.now()
     c = 0
     for e in (sofa_form or []):
         day = (e.get('date') or '')[:10]
@@ -188,13 +215,26 @@ def travel_distance_km(venue_cache, away_name, event):
     return round(2 * r * asin(sqrt(a)), 0)
 
 
+def referee_avg_cards(ref):
+    """裁判场均牌数（松紧倾向）。从 event.referee 的 yellowCards/redCards/games 算。"""
+    if not ref or not ref.get('games'):
+        return None
+    g = ref['games']
+    y = ref.get('yellowCards') or 0
+    r = ref.get('redCards') or 0
+    return round((y + r) / g, 2)
+
+
 def main():
     draw = sys.argv[1] if len(sys.argv) > 1 else '26085'
     intel = json.loads((BASE / 'intel' / f'intel_{draw}.json').read_text(encoding='utf-8'))
-    sofa = json.loads(SOFA.read_text(encoding='utf-8'))['matches']
-    sofa_by = {r['no']: r for r in sofa}
+    sofa_by = load_sofa(draw)
     venue_cache = json.loads(VENUE_CACHE.read_text(encoding='utf-8'))
     hist = load_history()
+
+    # 预测期最早开赛日 = 体能密度基准（不硬编码日期）
+    kickoffs = [m.get('kickoff', '')[:10] for m in intel['matches'] if m.get('kickoff')]
+    ref_date = min(kickoffs) if kickoffs else None
 
     out = {'draw_no': draw, 'matches': []}
     for m in intel['matches']:
@@ -210,8 +250,8 @@ def main():
             'no': no, 'league': m['league'], 'home': h, 'away': a,
             # 士气 + 体能
             'home_morale': morale(hist, h), 'away_morale': morale(hist, a),
-            'home_density7': density(form.get('home', []), 7),
-            'away_density7': density(form.get('away', []), 7),
+            'home_density7': density(form.get('home', []), 7, ref_date),
+            'away_density7': density(form.get('away', []), 7, ref_date),
             # 2026-08-16 增量维度
             'home_style': pick_stats(stats.get('home'), STYLE_KEYS),
             'away_style': pick_stats(stats.get('away'), STYLE_KEYS),
@@ -226,13 +266,23 @@ def main():
             'home_rhythm': pick_rhythm(streaks, 'home'),
             'away_rhythm': pick_rhythm(streaks, 'away'),
             'travel_km': travel_distance_km(venue_cache, a, event),
-            'home_manager': None,  # 待浏览器从 /api/v1/event/{id} 补
-            'away_manager': None,
+            'referee': (event.get('referee') or {}).get('name'),
+            'referee_avg_cards': referee_avg_cards(event.get('referee')),
+            'home_manager': (event.get('homeManager') or {}).get('name'),
+            'away_manager': (event.get('awayManager') or {}).get('name'),
+            'home_top': (r.get('topPlayers') or {}).get('home'),
+            'away_top': (r.get('topPlayers') or {}).get('away'),
         })
 
     dest = BASE / 'intel' / f'live_intel_{draw}.json'
     dest.write_text(json.dumps(out, ensure_ascii=False, indent=2), encoding='utf-8')
     print(f'✅ 活情报已生成 {dest}（{len(out["matches"])}场，士气/体能/风格/定位球/纪律/门将/xG/节奏/旅行距离）')
+    # 数据缺口统计（提醒补抓，不假装完整）
+    n_sofa = sum(1 for x in out['matches'] if x['home_style'] or x['away_style'])
+    n_travel = sum(1 for x in out['matches'] if x['travel_km'] is not None)
+    n_missing = sum(1 for x in out['matches'] if not (x['home_style'] or x['away_style']))
+    print(f'📊 覆盖率：风格数据 {n_sofa}/{len(out["matches"])} 场，旅行距离 {n_travel}/{len(out["matches"])} 场，无 sofa 数据 {n_missing} 场')
+    print(f'   ⚠️ 缺口提醒：裁判/新帅上任时间/关键球员状态 尚未抓取（需 browser 逐队补）')
     # 打印样例（前8场，展示新增维度）
     for x in out['matches'][:8]:
         hm = x['home_morale']; am = x['away_morale']

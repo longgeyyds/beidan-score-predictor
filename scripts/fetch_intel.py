@@ -144,8 +144,9 @@ def h2h_and_mid(rows, home, away, kickoff_str):
 
 def weather(lat, lon, utc_kickoff_hour, retries=3):
     """Open-Meteo 默认返回 UTC 整点。utc_kickoff_hour 形如 '2026-08-13T16:00'。
-    开球时刻向下取整到整点（19:25开球 → 查19:00，即开球时进行中的那个小时）。"""
-    url = f'https://api.open-meteo.com/v1/forecast?latitude={lat}&longitude={lon}&hourly=temperature_2m,precipitation,wind_speed_10m'
+    开球时刻向下取整到整点（19:25开球 → 查19:00，即开球时进行中的那个小时）。
+    2026-08-16 加 humidity（高温高湿影响节奏，资深球迷必看）。"""
+    url = f'https://api.open-meteo.com/v1/forecast?latitude={lat}&longitude={lon}&hourly=temperature_2m,precipitation,wind_speed_10m,relativehumidity_2m'
     req = urllib.request.Request(url, headers={'User-Agent': UA})
     last = None
     for i in range(retries):
@@ -156,7 +157,8 @@ def weather(lat, lon, utc_kickoff_hour, retries=3):
                 if t == utc_kickoff_hour:
                     return {'time': t, 'temp': d['hourly']['temperature_2m'][j],
                             'precip': d['hourly']['precipitation'][j],
-                            'wind': d['hourly']['wind_speed_10m'][j]}
+                            'wind': d['hourly']['wind_speed_10m'][j],
+                            'humidity': d['hourly']['relativehumidity_2m'][j]}
             return None
         except Exception as e:
             last = e
